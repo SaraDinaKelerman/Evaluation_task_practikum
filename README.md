@@ -1,1 +1,0 @@
-# Evaluation_task_practikum
