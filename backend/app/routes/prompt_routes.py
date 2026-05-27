@@ -1,24 +1,35 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
 from app.database.database import get_db
 from app.models.prompt_model import Prompt
-from app.schemas.prompt_schema import PromptCreate, PromptResponse
-from app.services.ai_service import generate_ai_response
+from app.schemas.prompt_schema import (
+    PromptCreate,
+    PromptResponse
+)
+
+from app.services.ai_service import (
+    generate_ai_response
+)
 
 router = APIRouter()
 
+@router.get("/")
+def get_prompts(db: Session = Depends(get_db)):
+    return db.query(Prompt).all()
 
-@router.post("/", response_model=PromptResponse)
+@router.post(
+    "/",
+    response_model=PromptResponse
+)
 def create_prompt(
     request: PromptCreate,
     db: Session = Depends(get_db)
 ):
 
-    ai_answer = generate_ai_response(request.prompt)
+    ai_answer = generate_ai_response(
+        request.prompt
+    )
 
     new_prompt = Prompt(
         user_id=request.user_id,
@@ -28,15 +39,43 @@ def create_prompt(
         ai_response=ai_answer
     )
 
+    
+
+
+
     db.add(new_prompt)
+
     db.commit()
+
     db.refresh(new_prompt)
 
     return new_prompt
 
 
-@router.get("/", response_model=list[PromptResponse])
-def get_prompts(db: Session = Depends(get_db)):
+@router.get(
+    "/",
+    response_model=list[PromptResponse]
+)
+def get_prompts(
+    db: Session = Depends(get_db)
+):
+
     prompts = db.query(Prompt).all()
+
+    return prompts
+
+
+@router.get(
+    "/user/{user_id}",
+    response_model=list[PromptResponse]
+)
+def get_user_history(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+
+    prompts = db.query(Prompt).filter(
+        Prompt.user_id == user_id
+    ).all()
 
     return prompts
